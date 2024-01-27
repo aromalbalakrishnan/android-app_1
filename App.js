@@ -26,6 +26,7 @@ export default function App() {
   const [bookAuthor, setBookAuthor] = useState("");
   const [bookDetails, setBookDetails] = useState({});
   const [bookImage, setBookImage] = useState("");
+  const [showBooks, setShowBooks] = useState(false); // State to track button click
 
   const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -34,6 +35,7 @@ export default function App() {
   const makeApiCall = () => {
     setBookDetails({});
     setBookImage("");
+    setShowBooks(true); // Set showBooks to true when button is clicked
     
     const formattedBookTitle = bookTitle.trim().replace(/ /g, '%');
     const formattedBookAuthor = bookAuthor.trim().replace(/ /g, '%');
@@ -47,9 +49,12 @@ export default function App() {
       .then((response) => response.json())
       .then((data) => {
         // handleResponse(data);
-        setBooks(data.items || [])
+        setBooks(data.items || [])        
       })
-      .catch((error) => console.error(error));
+      .catch((error) => { 
+        console.error(error);
+        setShowBooks(false);
+      });
   };
 
   // Function to fetch additional details of the clicked book
@@ -66,8 +71,8 @@ export default function App() {
   const renderBooks = () => {
     return books.map((book, index) => {
       const volumeInfo = book.volumeInfo;
-      const title = volumeInfo.title || "Title not available";
-      const subtitle = volumeInfo.subtitle || "Subtitle not available";
+      const title = volumeInfo.title;// || "Title not available";
+      const subtitle = volumeInfo.subtitle || undefined;//"Subtitle not available";
       const authors = volumeInfo.authors ? volumeInfo.authors.join(", ") : "Author not available";
       const thumbnail = volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : "";
       const price = book.saleInfo && book.saleInfo.retailPrice ? `${book.saleInfo.retailPrice.amount} ${book.saleInfo.retailPrice.currencyCode}` : "Price not available";
@@ -76,10 +81,17 @@ export default function App() {
       return (
         // TouchableOpacity added to make each book view clickable
         <TouchableOpacity key={index} style={styles.bookContainer} onPress={() => fetchBookDetails(bookId)}>
-          <Image source={{ uri: thumbnail }} style={styles.image} />
+          {thumbnail && (
+            <Image
+              source={{ uri: thumbnail }}
+              style={styles.image}
+             />
+            )}
+          {/* <Image source={{ uri: thumbnail }} style={styles.image} accessibilityLabel="Book Cover Image"/> */}
           <View style={styles.bookDetails}>
             <Text>Title: {title}</Text>
-            <Text>Subtitle: {subtitle}</Text>
+            {subtitle &&
+            <Text>Subtitle: {subtitle}</Text> }
             <Text>Author: {authors}</Text>
             <Text>Price: {price}</Text>
           </View>
@@ -96,7 +108,7 @@ export default function App() {
 
       setBookDetails({
         title: book.title,
-        subtitle: book.subtitle || "Subtitle not available",
+       // subtitle: book.subtitle,// || "Subtitle not available",
         author: book.authors ? book.authors[0] : "Author not available",
       });
 
@@ -161,9 +173,12 @@ export default function App() {
           <Text>Price: {bookDetails.price}</Text>
         </View>
       ) : null}  */}
-      <ScrollView style={styles.scrollView}>
-        {renderBooks()}
-      </ScrollView>
+      {/* Conditionally render ScrollView based on showBooks state */}
+      {showBooks && (
+        <ScrollView style={styles.scrollView}>
+          {renderBooks()}
+        </ScrollView>
+      )}
       {/* Modal to display additional book details */}
       <Modal
         animationType="slide"
@@ -182,7 +197,7 @@ export default function App() {
             )}
             {/* <ImageBackground>{bookDetails.imageLinks.thumbnail ? bookDetails.imageLinks.thumbnail : null}</ImageBackground> */}
             <Text>Title: {bookDetails.title}</Text>
-            <Text>Subtitle: {bookDetails.subtitle}</Text>
+            {bookDetails.subtitle && <Text>Subtitle: {bookDetails.subtitle}</Text> }
             <Text>Author: {bookDetails.authors}</Text>
             {/* Add other details as needed */}
             <Button title="Close" onPress={() => setModalVisible(false)} />
@@ -198,9 +213,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f4f4f4",
+    backgroundColor: "#E6E6FA",
     padding: 20,
-    marginTop: 20,
+    marginTop: 35,
   },
   input: {
     width: "80%",
@@ -211,6 +226,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     width: "100%",
+    // display: "none",
   },
   bookContainer: {
     flexDirection: "row",
