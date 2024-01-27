@@ -19,7 +19,7 @@
 //   },
 // });
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Image, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, Button, Image, StyleSheet, ScrollView, TouchableOpacity, Modal, ImageBackground } from "react-native";
 
 export default function App() {
   const [bookTitle, setBookTitle] = useState("");
@@ -28,6 +28,8 @@ export default function App() {
   const [bookImage, setBookImage] = useState("");
 
   const [books, setBooks] = useState([]);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const makeApiCall = () => {
     setBookDetails({});
@@ -50,6 +52,17 @@ export default function App() {
       .catch((error) => console.error(error));
   };
 
+  // Function to fetch additional details of the clicked book
+  const fetchBookDetails = (bookId) => {
+    fetch(`https://www.googleapis.com/books/v1/volumes/${bookId}`)
+      .then((response) => response.json())
+      .then((data) => {
+        setBookDetails(data.volumeInfo || {}); // Store additional details
+        setModalVisible(true); // Show modal with additional details
+      })
+      .catch((error) => console.error(error));
+  };
+
   const renderBooks = () => {
     return books.map((book, index) => {
       const volumeInfo = book.volumeInfo;
@@ -58,9 +71,11 @@ export default function App() {
       const authors = volumeInfo.authors ? volumeInfo.authors.join(", ") : "Author not available";
       const thumbnail = volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : "";
       const price = book.saleInfo && book.saleInfo.retailPrice ? `${book.saleInfo.retailPrice.amount} ${book.saleInfo.retailPrice.currencyCode}` : "Price not available";
+      const bookId = book.id;
 
       return (
-        <View key={index} style={styles.bookContainer}>
+        // TouchableOpacity added to make each book view clickable
+        <TouchableOpacity key={index} style={styles.bookContainer} onPress={() => fetchBookDetails(bookId)}>
           <Image source={{ uri: thumbnail }} style={styles.image} />
           <View style={styles.bookDetails}>
             <Text>Title: {title}</Text>
@@ -68,7 +83,7 @@ export default function App() {
             <Text>Author: {authors}</Text>
             <Text>Price: {price}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       );
     });
   };
@@ -149,6 +164,31 @@ export default function App() {
       <ScrollView style={styles.scrollView}>
         {renderBooks()}
       </ScrollView>
+      {/* Modal to display additional book details */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+          {/* Conditional rendering of Image component */}
+          {bookDetails.imageLinks && bookDetails.imageLinks.thumbnail && (
+            <Image
+              source={{ uri: bookDetails.imageLinks.thumbnail }}
+              style={styles.modalImage}
+             />
+            )}
+            {/* <ImageBackground>{bookDetails.imageLinks.thumbnail ? bookDetails.imageLinks.thumbnail : null}</ImageBackground> */}
+            <Text>Title: {bookDetails.title}</Text>
+            <Text>Subtitle: {bookDetails.subtitle}</Text>
+            <Text>Author: {bookDetails.authors}</Text>
+            {/* Add other details as needed */}
+            <Button title="Close" onPress={() => setModalVisible(false)} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -160,6 +200,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#f4f4f4",
     padding: 20,
+    marginTop: 20,
   },
   input: {
     width: "80%",
@@ -183,5 +224,36 @@ const styles = StyleSheet.create({
   bookDetails: {
     flex: 1,
     marginLeft: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+    maxWidth: "80%", // Set maximum width to 80% of the screen width
+    maxHeight: "80%", // Set maximum height to 80% of the screen height
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  blurView: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  modalImage: {
+    width: 200, // Adjust width as needed
+    height: 300, // Adjust height as needed
+    resizeMode: "cover", // or "contain" based on your preference
+    marginBottom: 10, // Add margin bottom for spacing
+    justifyContent: "center",
+    alignItems: "center"
   },
 });
