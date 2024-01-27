@@ -19,7 +19,7 @@
 //   },
 // });
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, Image, StyleSheet } from "react-native";
+import { View, Text, TextInput, Button, Image, StyleSheet, ScrollView } from "react-native";
 
 export default function App() {
   const [bookTitle, setBookTitle] = useState("");
@@ -27,20 +27,50 @@ export default function App() {
   const [bookDetails, setBookDetails] = useState({});
   const [bookImage, setBookImage] = useState("");
 
+  const [books, setBooks] = useState([]);
+
   const makeApiCall = () => {
     setBookDetails({});
     setBookImage("");
+    
+    const formattedBookTitle = bookTitle.trim().replace(/ /g, '%');
+    const formattedBookAuthor = bookAuthor.trim().replace(/ /g, '%');
+    
+    const query = formattedBookTitle && formattedBookAuthor? `intitle:${encodeURIComponent(formattedBookTitle)}+inauthor:${encodeURIComponent(formattedBookAuthor)}`
+        : formattedBookTitle? `intitle:${encodeURIComponent(formattedBookTitle)}`
+        : formattedBookAuthor? `inauthor:${encodeURIComponent(formattedBookAuthor)}`
+        : "";
 
-    fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-        bookTitle + bookAuthor
-      )}`
-    )
+    fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`)
       .then((response) => response.json())
       .then((data) => {
-        handleResponse(data);
+        // handleResponse(data);
+        setBooks(data.items || [])
       })
       .catch((error) => console.error(error));
+  };
+
+  const renderBooks = () => {
+    return books.map((book, index) => {
+      const volumeInfo = book.volumeInfo;
+      const title = volumeInfo.title || "Title not available";
+      const subtitle = volumeInfo.subtitle || "Subtitle not available";
+      const authors = volumeInfo.authors ? volumeInfo.authors.join(", ") : "Author not available";
+      const thumbnail = volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : "";
+      const price = book.saleInfo && book.saleInfo.retailPrice ? `${book.saleInfo.retailPrice.amount} ${book.saleInfo.retailPrice.currencyCode}` : "Price not available";
+
+      return (
+        <View key={index} style={styles.bookContainer}>
+          <Image source={{ uri: thumbnail }} style={styles.image} />
+          <View style={styles.bookDetails}>
+            <Text>Title: {title}</Text>
+            <Text>Subtitle: {subtitle}</Text>
+            <Text>Author: {authors}</Text>
+            <Text>Price: {price}</Text>
+          </View>
+        </View>
+      );
+    });
   };
 
   const handleResponse = (response) => {
@@ -101,7 +131,7 @@ export default function App() {
         value={bookAuthor}
       />
       <Button title="Search" onPress={makeApiCall} />
-      {bookImage ? (
+      {/* {bookImage ? (
         <Image source={{ uri: bookImage }} style={styles.image} />
       ) : null}
        {bookDetails.title === 'No books found' ? (
@@ -115,7 +145,10 @@ export default function App() {
           <Text>Author: {bookDetails.author}</Text>
           <Text>Price: {bookDetails.price}</Text>
         </View>
-      ) : null} 
+      ) : null}  */}
+      <ScrollView style={styles.scrollView}>
+        {renderBooks()}
+      </ScrollView>
     </View>
   );
 }
@@ -135,13 +168,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 5,
   },
+  scrollView: {
+    width: "100%",
+  },
+  bookContainer: {
+    flexDirection: "row",
+    marginBottom: 20,
+  },
   image: {
     width: 100,
     height: 150,
-    marginTop: 20,
     borderRadius: 5,
   },
   bookDetails: {
-    marginTop: 20,
+    flex: 1,
+    marginLeft: 10,
   },
 });
