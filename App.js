@@ -76,6 +76,13 @@ export default function App() {
       const authors = volumeInfo.authors ? volumeInfo.authors.join(", ") : "Author not available";
       const thumbnail = volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : "";
       const price = book.saleInfo && book.saleInfo.retailPrice ? `${book.saleInfo.retailPrice.amount} ${book.saleInfo.retailPrice.currencyCode}` : "Price not available";
+      // const industryIdentifiers = book.industryIdentifiers;
+    //   if (book.industryIdentifiers && book.industryIdentifiers.length > 0) {
+    //     const isbn = book.industryIdentifiers[0].identifier;
+    //     // Use isbn variable here
+    // }
+    // const isbn = book.industryIdentifiers.length > 0 ? book.industryIdentifiers[0].identifier: null;
+
       const bookId = book.id;
 
       return (
@@ -94,53 +101,11 @@ export default function App() {
             <Text>Subtitle: {subtitle}</Text> }
             <Text>Author: {authors}</Text>
             <Text>Price: {price}</Text>
+            {/* { isbn != undefined ?<Text>ISBN: {isbn}</Text> : null }  */}
           </View>
         </TouchableOpacity>
       );
     });
-  };
-
-  const handleResponse = (response) => {
-    let priceFlag = false;
-
-    if (response.items && response.items.length > 0) {
-      const book = response.items[0].volumeInfo;
-
-      setBookDetails({
-        title: book.title,
-       // subtitle: book.subtitle,// || "Subtitle not available",
-        author: book.authors ? book.authors[0] : "Author not available",
-      });
-
-      if (book.imageLinks) {
-        setBookImage(book.imageLinks.thumbnail);
-      }
-
-      for (let i = 0; i < response.items.length; i++) {
-        if (
-          response.items[i].saleInfo &&
-          response.items[i].saleInfo.retailPrice
-        ) {
-          setBookDetails((prevState) => ({
-            ...prevState,
-            price: `${response.items[i].saleInfo.retailPrice.amount} ${response.items[i].saleInfo.retailPrice.currencyCode}`,
-          }));
-          priceFlag = true;
-          break;
-        }
-      }
-
-      if (!priceFlag) {
-        setBookDetails((prevState) => ({
-          ...prevState,
-          price: "Price not Available",
-        }));
-      }
-    } else {
-
-      setBookDetails({ title: "No books found" });
-      setBookImage('');
-    }
   };
 
   return (
@@ -199,6 +164,12 @@ export default function App() {
             <Text>Title: {bookDetails.title}</Text>
             {bookDetails.subtitle && <Text>Subtitle: {bookDetails.subtitle}</Text> }
             <Text>Author: {bookDetails.authors}</Text>
+            <Text>Publisher: {bookDetails.publisher}</Text> 
+            <Text>Publish Date: {bookDetails.publishedDate}</Text> 
+            {bookDetails.industryIdentifiers &&
+            bookDetails.industryIdentifiers.length > 0 && (
+            <Text>ISBN No:{" "}{bookDetails.industryIdentifiers[0].identifier}{" "}</Text>
+            )}
             {/* Add other details as needed */}
             <Button title="Close" onPress={() => setModalVisible(false)} />
           </View>
